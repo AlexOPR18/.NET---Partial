@@ -202,3 +202,52 @@ Content-Type: application/json
   "endUtc": "2030-02-01T16:00:00Z",
   "attendees": 2
 }
+
+### R10. A large room, more than 10 seats
+# @name createLargeRoom
+POST {{baseUrl}}/api/rooms
+Content-Type: application/json
+
+{
+  "name": "Large study room",
+  "capacity": 12
+}
+
+###
+@largeRoomId = {{createLargeRoom.response.body.$.id}}
+
+### R10.1 Exactly 2 hours in a large room (expected: 201)
+POST {{baseUrl}}/api/rooms/{{largeRoomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "radu",
+  "startUtc": "2030-03-01T08:00:00Z",
+  "endUtc": "2030-03-01T10:00:00Z",
+  "attendees": 8
+}
+
+### R10.2 More than 2 hours in a large room (expected: 400)
+POST {{baseUrl}}/api/rooms/{{largeRoomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "radu",
+  "startUtc": "2030-03-02T08:00:00Z",
+  "endUtc": "2030-03-02T10:30:00Z",
+  "attendees": 8
+}
+
+### R10.3 Three hours in a room with 10 seats keeps the 4-hour limit (expected: 201)
+POST {{baseUrl}}/api/rooms/{{roomId}}/bookings
+Content-Type: application/json
+
+{
+  "bookedBy": "sorin",
+  "startUtc": "2030-03-03T08:00:00Z",
+  "endUtc": "2030-03-03T11:00:00Z",
+  "attendees": 4
+}
+
+### R11. Cancelling a booking that starts in less than 60 minutes (expected: 409)
+### Create a booking that starts about 30 minutes from now (edit the dates), then cancel it.

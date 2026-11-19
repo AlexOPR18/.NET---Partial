@@ -10,6 +10,8 @@ public sealed class Booking
 
     public static readonly TimeSpan MaxDuration = TimeSpan.FromHours(4);
 
+    public static readonly TimeSpan MinNoticeForCancellation = TimeSpan.FromMinutes(60);
+
     private Booking()
     {
     }
@@ -86,10 +88,13 @@ public sealed class Booking
         return Unit.Value;
     }
 
-    public Result<Unit> Cancel()
+    public Result<Unit> Cancel(DateTime nowUtc)
     {
         if (!IsActive)
             return BookingErrors.AlreadyCancelled;
+
+        if (Period.StartUtc - nowUtc < MinNoticeForCancellation)
+            return BookingErrors.CancellationTooLate;
 
         Status = BookingStatus.Cancelled;
         return Unit.Value;

@@ -7,6 +7,10 @@ public sealed class Room
 {
     public const int MaxNameLength = 100;
 
+    public const int LargeRoomCapacityThreshold = 10;
+
+    public static readonly TimeSpan LargeRoomMaxBookingDuration = TimeSpan.FromHours(2);
+
     private Room()
     {
     }
@@ -16,6 +20,8 @@ public sealed class Room
     public string Name { get; private set; } = string.Empty;
 
     public int Capacity { get; private set; }
+
+    public bool IsLarge => Capacity > LargeRoomCapacityThreshold;
 
     public static Result<Room> Create(string? name, int capacity)
     {
@@ -52,6 +58,9 @@ public sealed class Room
 
         if (booking.Attendees > Capacity)
             return BookingErrors.AttendeesExceedCapacity;
+
+        if (IsLarge && booking.Period.Duration > LargeRoomMaxBookingDuration)
+            return BookingErrors.DurationTooLongForLargeRoom;
 
         if (activeBookings.Any(existing => existing.Blocks(booking.Period)))
             return BookingErrors.RoomOccupied;
