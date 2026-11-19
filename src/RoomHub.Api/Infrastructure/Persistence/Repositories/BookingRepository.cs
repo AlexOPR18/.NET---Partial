@@ -13,5 +13,21 @@ public sealed class BookingRepository(RoomHubDbContext db) : IBookingRepository
             .Where(booking => booking.RoomId == roomId && booking.Status == BookingStatus.Active)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Booking>> GetActiveForParticipantOnDayAsync(
+        string bookedBy,
+        DateTime dayUtc,
+        CancellationToken cancellationToken)
+    {
+        var dayStart = DateTime.SpecifyKind(dayUtc.Date, DateTimeKind.Utc);
+        var nextDayStart = dayStart.AddDays(1);
+
+        return await db.Bookings
+            .Where(booking => booking.BookedBy == bookedBy
+                && booking.Status == BookingStatus.Active
+                && booking.Period.StartUtc >= dayStart
+                && booking.Period.StartUtc < nextDayStart)
+            .ToListAsync(cancellationToken);
+    }
+
     public void Add(Booking booking) => db.Bookings.Add(booking);
 }

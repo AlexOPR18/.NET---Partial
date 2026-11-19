@@ -22,6 +22,7 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         builder.Property(booking => booking.Attendees).IsRequired();
         builder.Property(booking => booking.Status).HasConversion<string>().HasMaxLength(20);
         builder.Ignore(booking => booking.IsActive);
+        builder.Ignore(booking => booking.DayUtc);
 
         builder.ComplexProperty(booking => booking.Period, period =>
         {
@@ -34,5 +35,6 @@ public sealed class BookingConfiguration : IEntityTypeConfiguration<Booking>
         });
 
         builder.HasIndex(booking => new { booking.RoomId, booking.Status });
+        builder.HasIndex(booking => new { booking.BookedBy, booking.Status });
     }
 }

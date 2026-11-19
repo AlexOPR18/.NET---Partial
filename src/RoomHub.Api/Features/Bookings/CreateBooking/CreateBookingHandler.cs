@@ -33,6 +33,16 @@ public sealed class CreateBookingHandler(
             return bookingResult.Error;
 
         var booking = bookingResult.Value;
+
+        var participantBookingsSameDay = await bookings.GetActiveForParticipantOnDayAsync(
+            booking.BookedBy,
+            booking.DayUtc,
+            cancellationToken);
+
+        var dailyLimitResult = booking.EnsureWithinDailyLimit(participantBookingsSameDay);
+        if (dailyLimitResult.IsFailure)
+            return dailyLimitResult.Error;
+
         bookings.Add(booking);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

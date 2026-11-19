@@ -6,6 +6,8 @@ public sealed class Booking
 {
     public const int MaxBookedByLength = 100;
 
+    public const int MaxActiveBookingsPerParticipantPerDay = 2;
+
     public static readonly TimeSpan MaxDuration = TimeSpan.FromHours(4);
 
     private Booking()
@@ -25,6 +27,8 @@ public sealed class Booking
     public BookingStatus Status { get; private set; }
 
     public bool IsActive => Status == BookingStatus.Active;
+
+    public DateTime DayUtc => Period.StartUtc.Date;
 
     internal static Result<Booking> Create(
         Guid roomId,
@@ -67,6 +71,20 @@ public sealed class Booking
     }
 
     public bool Blocks(TimeRange requested) => IsActive && Period.Overlaps(requested);
+
+    public Result<Unit> EnsureWithinDailyLimit(IReadOnlyCollection<Booking> participantBookingsSameDay)
+    {
+        var otherActiveBookingsSameDay = participantBookingsSameDay.Count(other =>
+            other.Id != Id
+            && other.IsActive
+            && other.BookedBy == BookedBy
+            && other.DayUtc == DayUtc);
+
+        if (otherActiveBookingsSameDay >= MaxActiveBookingsPerParticipantPerDay)
+            return BookingErrors.DailyLimitReached;
+
+        return Unit.Value;
+    }
 
     public Result<Unit> Cancel()
     {
